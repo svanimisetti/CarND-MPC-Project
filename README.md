@@ -35,7 +35,7 @@ The details have already been documeted [elsewhere](https://github.com/svanimise
 
 ### 2.2. Hyperparameters Tuning
 
-The following code block lists the section of the code for hyperparameter definition. The number of future timesteps for prediction is set to `N=10`. Further, the time intervals for future prediction is 200ms. To account for controller latency and predict control inputs, 100ms time delay is used.
+The following code block lists the section of the code for hyperparameter definition. The number of future timesteps for prediction is set to `N=10`. Further, the time intervals for future prediction is 200ms. The combination of `N*dt` gives about 2 secs of prediction horizon, which for most practical case is optimal. Too small a horizon will lead to instability & too large a horizon will be unnecessary in dynamically chaning environment, e.g., busy pedestrian crossing / intersection. Out of three different configurations: `N=20, dt=0.05`, `N=10, dt=0.2` and `N=20, dt=0.1`, the chosen one gave best performance. To account for controller latency and predict control inputs, 100ms time delay is used.
 
 The critial cost penalty imposed to minimize sudden changes in steering (`lambda_ddelta`) is set to 5000. All other cost penalty parameters are held at 1. The reference speed to the vehicle can also be tune here to assess controller stability.
 
