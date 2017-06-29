@@ -31,7 +31,7 @@ The source code implementation is done in three major parts. A summary of this i
 3. The final aspect of implementation is the telemetry data management, optimization/prediction and visualization in the file `main.cpp`.
 
 ### 2.1. Implementation of MPC Class (FG_eval and Solver)
-The details have already been documeted [elsewhere](https://github.com/svanimisetti/CarND-MPC-Quizzes) and will be dicussed in this file in detail.
+The details have already been documeted [elsewhere](https://github.com/svanimisetti/CarND-MPC-Quizzes) and will <u>not</u> be dicussed in this file in detail.
 
 ### 2.2. Hyperparameters Tuning
 
