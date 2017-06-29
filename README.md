@@ -1,115 +1,87 @@
-# CarND-Controls-MPC
-Self-Driving Car Engineer Nanodegree Program
+# 1. Term 2 MPC Controls Project Overview
+
+This writeup is divided into the following sections.
+
+  - [1. Configuration, Build and Run Process](#1-configuration-build-and-run-process)
+  - [2. Source Code Implementation](#2-source-code-implementation)
+      - [2.1. Implementation of MPC Class (FG_eval and Solver)](#21-implementation-of-mpc-class-fg_eval-and-solver)
+      - [2.2. Hyperparameters Tuning](#22-hyperparameters-tuning)
+      - [2.3. Telemetry Data, Optimization & Visualization](#23-telemetry-data-optimization--visualization)
+  - [3. Results and Discussions](#3-results-and-discussions)
 
 ---
 
-## Dependencies
+## 1. Configuration, Build and Run Process
 
-* cmake >= 3.5
- * All OSes: [click here for installation instructions](https://cmake.org/install/)
-* make >= 4.1
-  * Linux: make is installed by default on most Linux distros
-  * Mac: [install Xcode command line tools to get make](https://developer.apple.com/xcode/features/)
-  * Windows: [Click here for installation instructions](http://gnuwin32.sourceforge.net/packages/make.htm)
-* gcc/g++ >= 5.4
-  * Linux: gcc / g++ is installed by default on most Linux distros
-  * Mac: same deal as make - [install Xcode command line tools]((https://developer.apple.com/xcode/features/)
-  * Windows: recommend using [MinGW](http://www.mingw.org/)
-* [uWebSockets](https://github.com/uWebSockets/uWebSockets)
-  * Run either `install-mac.sh` or `install-ubuntu.sh`.
-  * If you install from source, checkout to commit `e94b6e1`, i.e.
-    ```
-    git clone https://github.com/uWebSockets/uWebSockets 
-    cd uWebSockets
-    git checkout e94b6e1
-    ```
-    Some function signatures have changed in v0.14.x. See [this PR](https://github.com/udacity/CarND-MPC-Project/pull/3) for more details.
-* Fortran Compiler
-  * Mac: `brew install gcc` (might not be required)
-  * Linux: `sudo apt-get install gfortran`. Additionall you have also have to install gcc and g++, `sudo apt-get install gcc g++`. Look in [this Dockerfile](https://github.com/udacity/CarND-MPC-Quizzes/blob/master/Dockerfile) for more info.
-* [Ipopt](https://projects.coin-or.org/Ipopt)
-  * Mac: `brew install ipopt`
-  * Linux
-    * You will need a version of Ipopt 3.12.1 or higher. The version available through `apt-get` is 3.11.x. If you can get that version to work great but if not there's a script `install_ipopt.sh` that will install Ipopt. You just need to download the source from the Ipopt [releases page](https://www.coin-or.org/download/source/Ipopt/) or the [Github releases](https://github.com/coin-or/Ipopt/releases) page.
-    * Then call `install_ipopt.sh` with the source directory as the first argument, ex: `bash install_ipopt.sh Ipopt-3.12.1`. 
-  * Windows: TODO. If you can use the Linux subsystem and follow the Linux instructions.
-* [CppAD](https://www.coin-or.org/CppAD/)
-  * Mac: `brew install cppad`
-  * Linux `sudo apt-get install cppad` or equivalent.
-  * Windows: TODO. If you can use the Linux subsystem and follow the Linux instructions.
+* For this project, Windows 10 x64 WSL (Ubuntu 16.04) build environment was used. The core dependencies (cmake >=3.5, make >= 4.1, gcc/g++ >= 5.4) are already a part of this system.
+* [uWebSockets](https://github.com/uWebSockets/uWebSockets) was installed using `install-ubuntu.sh`.
+* Fortran Compiler was installed using `sudo apt-get install gfortran`.
+* [Ipopt](https://projects.coin-or.org/Ipopt) version of Ipopt 3.12.1 was installed using `install_ipopt.sh` by passing argument as extracted directory for Ipopt (`Ipopt-3.12.1`).
+* [CppAD](https://www.coin-or.org/CppAD/) was installed using `sudo apt-get install cppad`.
 * [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page). This is already part of the repo so you shouldn't have to worry about it.
-* Simulator. You can download these from the [releases tab](https://github.com/udacity/self-driving-car-sim/releases).
-* Not a dependency but read the [DATA.md](./DATA.md) for a description of the data sent back from the simulator.
+* The term 2 simulator was downloaded from the [release](https://github.com/udacity/self-driving-car-sim/releases) section of the repository.
+* The build for MPC project was done  using command `mkdir build && cd build && cmake .. && make`. The exectuable was run using `./mpc`. The executable (server) waits for uWebSockets connection from Term 2 Simulation (client). Once connection is established, the executable recieves "telemetry" data from the client and sends back "steer" command data.
 
+## 2. Source Code Implementation
 
-## Basic Build Instructions
+The source code implementation is done in three major parts. A summary of this is provided in the following. Subsequently, a walk through of each section is described.
 
+1. The first part of the implementation is in the file `MPC.cpp`, which defines the `FG_eval` and the `MPC` class implementation. In this file, the cost objective, constraints and the Ipopt optimization solver details are implemented.
+2. The second import aspect of implementation is the tunable tunable hyperparameters, for example, those used for defining the objecdtive functions. These are implemented in the file `params.cpp`.
+3. The final aspect of implementation is the telemetry data management, optimization/prediction and visualization in the file `main.cpp`.
 
-1. Clone this repo.
-2. Make a build directory: `mkdir build && cd build`
-3. Compile: `cmake .. && make`
-4. Run it: `./mpc`.
+### 2.1. Implementation of MPC Class (FG_eval and Solver)
+The details have already been documeted [elsewhere](https://github.com/svanimisetti/CarND-MPC-Quizzes) and will be dicussed in this file in detail.
 
-## Tips
+### 2.2. Hyperparameters Tuning
 
-1. It's recommended to test the MPC on basic examples to see if your implementation behaves as desired. One possible example
-is the vehicle starting offset of a straight line (reference). If the MPC implementation is correct, after some number of timesteps
-(not too many) it should find and track the reference line.
-2. The `lake_track_waypoints.csv` file has the waypoints of the lake track. You could use this to fit polynomials and points and see of how well your model tracks curve. NOTE: This file might be not completely in sync with the simulator so your solution should NOT depend on it.
-3. For visualization this C++ [matplotlib wrapper](https://github.com/lava/matplotlib-cpp) could be helpful.
+The following code block lists the section of the code for hyperparameter definition. The number of future timesteps for prediction is set to `N=10`. Further, the time intervals for future prediction is 200ms. To account for controller latency and predict control inputs, 100ms time delay is used.
 
-## Editor Settings
+The critial cost penalty imposed to minimize sudden changes in steering (`lambda_ddelta`) is set to 5000. All other cost penalty parameters are held at 1. The reference speed to the vehicle can also be tune here to assess controller stability.
 
-We've purposefully kept editor configuration files out of this repo in order to
-keep it as simple and environment agnostic as possible. However, we recommend
-using the following settings:
+``` c++
+  // Set the timestep length and duration
+  const size_t N = 10;
+  const double dt = 0.2;
+  const double dt_latency = 0.1;
 
-* indent using spaces
-* set tab width to 2 spaces (keeps the matrices in source code aligned)
+  // Cost penalties for cte, epsi and v_start
+  const double lambda_cte = 1.0;
+  const double lambda_epsi = 1.0;
+  const double lambda_v = 1.0;    
 
-## Code Style
+  // Additional hyperparameters to penalize agressive maneuvers
+  // Following lambda's are Lagrange multipliers for the optimizer
+  // Cost penalties to minimize use of steering and acceleration
+  const double lambda_delta = 1.0;
+  const double lambda_a = 1.0;
+  // Cost penalties to minimize sudden changes in steering and acceleration
+  const double lambda_ddelta = 5000.0;
+  const double lambda_da = 1.0;
 
-Please (do your best to) stick to [Google's C++ style guide](https://google.github.io/styleguide/cppguide.html).
+  // Length from front to CoG that has a similar radius.
+  const double Lf = 2.67;
 
-## Project Instructions and Rubric
+  // Reference (target steady state) velocity
+  const double ref_cte = 0.0;
+  const double ref_epsi = 0.0;
+  const double ref_v = 60.0 * 0.44704; // convert mph to m/s
+```
 
-Note: regardless of the changes you make, your project must be buildable using
-cmake and make!
+### 2.3. Telemetry Data, Optimization & Visualization
 
-More information is only accessible by people who are already enrolled in Term 2
-of CarND. If you are enrolled, see [the project page](https://classroom.udacity.com/nanodegrees/nd013/parts/40f38239-66b6-46ec-ae68-03afd8a601c8/modules/f1820894-8322-4bb3-81aa-b26b3c6dcbaf/lessons/b1ff3be0-c904-438e-aad3-2b5379f0e0c3/concepts/1a2255a0-e23c-44cf-8d41-39b8a3c8264a)
-for instructions and the project rubric.
+The telemetry data from client is recieved by the server and processed in lines 91-99. In addition to telemetry data already defined in the starter code, additionally, steering angle values is also extracted (see lines 98 & 99) based on information from [DATA.md](https://github.com/svanimisetti/CarND-MPC-Project/blob/master/DATA.md).
 
-## Hints!
+All data processing, optimization and predictions are done in the vehicle coordinate frame. Since the telemetry data is in the world or global coordinate frame, reference trajectory point data is transformed to vehicle coordinate frames in lines 103-107. Note that both translations and rotation (by `phi`) are accounted. In line 11, a 3rd degree polynomial is fitted to these points. A summary of the state variables and the trasnformation from global to vehicle coordinate frame is shown in the following figure.
 
-* You don't have to follow this directory structure, but if you do, your work
-  will span all of the .cpp files here. Keep an eye out for TODOs.
+![MPC State](./state_description.PNG)
 
-## Call for IDE Profiles Pull Requests
+To account for latency, a future state at `t+100ms` is predicted from lines 114-127. Note that these equations are same as those introduced in the class, but certain assumptions mean that few terms in the equations are 0.0.
 
-Help your fellow students!
+The optimized state information is returned by the MPC controller optimization solver (see line 129) in the variable `vars`. The immediate predicted control inputs (steering & throttle), with latency of 100ms, are sent back to client in lines 138-139. Also, the precited trajectory and the reference trajectory line are passed back to the client  for visualization in lines 142-162.
 
-We decided to create Makefiles with cmake to keep this project as platform
-agnostic as possible. Similarly, we omitted IDE profiles in order to we ensure
-that students don't feel pressured to use one IDE or another.
+## 3. Results and Discussions
 
-However! I'd love to help people get up and running with their IDEs of choice.
-If you've created a profile for an IDE that you think other students would
-appreciate, we'd love to have you add the requisite profile files and
-instructions to ide_profiles/. For example if you wanted to add a VS Code
-profile, you'd add:
+The implementation of the MPC controller was used to successfully complete multiple laps of the lake track. Multiple reference vehicle speed between 30 MPH and 60 MPH with an increment of 5 MPH were investigated. The controller is stable upto speeds of 55 MPH. There are signs of degradation at 60 MPH. A screen grab of the MPC controller completing a lap of the lake track can be seen [here](./trial_60mph.mp4).
 
-* /ide_profiles/vscode/.vscode
-* /ide_profiles/vscode/README.md
-
-The README should explain what the profile does, how to take advantage of it,
-and how to install it.
-
-Frankly, I've never been involved in a project with multiple IDE profiles
-before. I believe the best way to handle this would be to keep them out of the
-repo root to avoid clutter. My expectation is that most profiles will include
-instructions to copy files to a new location to get picked up by the IDE, but
-that's just a guess.
-
-One last note here: regardless of the IDE used, every submitted project must
-still be compilable with cmake and make./
+At speeds above 60 MPH, the controller becomes unstable at sharp turns. This is attributed to latency and processing delays in the controller. This can perhaps be improve further by putting a constraint on the throttle depending on the curvature of the 3rd degree polynomial use to fit reference trajectory. The optimizer will seek lower throttle (and hence speed) before sharp turns. This will be implemented in future endeavours.
